@@ -239,10 +239,10 @@ function drawRect(ctx, x,y,w,h,marginX,marginY)
 
 function fillRect(ctx, x,y,w,h,marginX,marginY,fillColor, txt, txtColor)
 {
-	ctx.fillStyle = fillColor; // 線の色
+	ctx.fillStyle = fillColor; 
 	ctx.fillRect(x+marginX, y+marginY, w-marginX*2, h-marginY*2);
 	if(txt){
-		ctx.fillStyle = txtColor; // 線の色
+		ctx.fillStyle = txtColor; 
 		ctx.fillText(txt, x+w/2, y+h/2, w);
 	}
 }
