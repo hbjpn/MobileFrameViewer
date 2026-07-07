@@ -1,9 +1,25 @@
 var config={
 	"NSCRB":12,
 	"NPRB":1,
-	"nSubCarrier":12*1,
-	"nSymbol":14*1
+	//"nSubCarrier":12*1,
+	"nSymbol":14
 };
+
+// 宣言
+class Grid {
+	constructor(nsc, nsymb) {
+	  this.nsc = nsc;
+	  this.nsymb = nsymb;
+	  this.grid = new Array(nsc);
+	  for(let k = 0; k < nsc; ++k)
+		this.grid[k] = new Array(nsymb).fill(0);
+	}
+
+	add(k, l){
+		this.grid[k][l] += 1;
+		return this.grid[k][l];
+	}
+  }
 
 // https://jp.mathworks.com/help/5g/ref/nrcsirsconfig.html
 var CSIRSConfig={
@@ -15,6 +31,7 @@ var CSIRSConfig={
 	"nrofPorts":32, // N
 	"symbolLocations":[0,2], // firstOFDMSymbolInTimeDomain, firstOFDMSymbolInTimeDomain2
 	"subcarrierLocations":"101101", // frequencyDomainAllocation, size 2,3,6,12 bit string, for many cases 6 [b5,b4,...,b0]. "101001" => f(0)=0, f(1)=3, f(2)=5. f(i) is bit number(index) of i-th bit set to 1
+	"cdm-Type":"fd-CDM2",
 	*/
 	/*
 	"nrofPorts":4, // N
@@ -27,10 +44,16 @@ var CSIRSConfig={
 	"subcarrierLocations":"011110", // frequencyDomainAllocation, size 2,3,6,12 bit string, for many cases 6 [b5,b4,...,b0]. "101001" => f(0)=0, f(1)=3, f(2)=5. f(i) is bit number(index) of i-th bit set to 1
 	"cdm-Type":"fd-CDM2",
 	*/
+	/*
 	"nrofPorts":8, // N
 	"symbolLocations":[3], // firstOFDMSymbolInTimeDomain, firstOFDMSymbolInTimeDomain2
 	"subcarrierLocations":"000110", // frequencyDomainAllocation, size 2,3,6,12 bit string, for many cases 6 [b5,b4,...,b0]. "101001" => f(0)=0, f(1)=3, f(2)=5. f(i) is bit number(index) of i-th bit set to 1
 	"cdm-Type":"cdm4-FD2-TD2",
+	*/
+	"nrofPorts":32, // N
+	"symbolLocations":[3], // firstOFDMSymbolInTimeDomain, firstOFDMSymbolInTimeDomain2
+	"subcarrierLocations":"110110", // frequencyDomainAllocation, size 2,3,6,12 bit string, for many cases 6 [b5,b4,...,b0]. "101001" => f(0)=0, f(1)=3, f(2)=5. f(i) is bit number(index) of i-th bit set to 1
+	"cdm-Type":"cdm8-FD2-TD4",
 };
 
 function table741531(){
@@ -137,6 +160,25 @@ function table741531(){
 				};
 
 				return ret;
+			}else if(cc["cdm-Type"]=="cdm8-FD2-TD4"){
+				// Row#18
+				const ki = [...fi].map(v=>v*2);
+				const li = cc.symbolLocations;
+
+				const ret={
+					"row":18,
+					"CDMGroup":[0,1,2,3],
+					"kd":[0,1],
+					"ld":[0,1,2,3],
+					"kblb":[
+						[ki[0],li[0]],
+						[ki[1],li[0]],
+						[ki[2],li[0]],
+						[ki[3],li[0]]
+					]
+				};
+
+				return ret;
 			}
 		}
 	}
@@ -163,7 +205,16 @@ function table741532_234()
 			[ [1,-1], [1,-1] ]
 		];
 	}else if(CSIRSConfig["cdm-Type"]=="cdm8-FD2-TD4"){
-		// TBD
+		ret = [
+			[ [1, 1], [1, 1, 1, 1] ],
+			[ [1,-1], [1, 1, 1, 1] ],
+			[ [1, 1], [1,-1, 1,-1] ],
+			[ [1,-1], [1,-1, 1,-1] ],
+			[ [1, 1], [1, 1,-1,-1] ],
+			[ [1,-1], [1, 1,-1,-1] ],
+			[ [1, 1], [1,-1,-1, 1] ],
+			[ [1,-1], [1,-1,-1, 1] ]
+		];
 	}
 	return ret;
 }
@@ -211,81 +262,30 @@ function getCSIRS()
 	return csirs;
 }
 
-function setupHDCanvas(canvas, logicalWidth, logicalHeight) {
-    //const canvas = document.getElementById(canvasId);
-    const ctx = canvas.getContext('2d');
-
-    // 1. Get the device pixel ratio (usually 2 or 3 on modern HD screens)
-    const dpr = window.devicePixelRatio || 1;
-
-    // 2. Set the display size (CSS pixels)
-    canvas.style.width = `${logicalWidth}px`;
-    canvas.style.height = `${logicalHeight}px`;
-
-    // 3. Set the internal drawing resolution (Physical pixels)
-    canvas.width = logicalWidth * dpr;
-    canvas.height = logicalHeight * dpr;
-
-    // 4. Scale the context so your drawing coordinates remain identical
-    ctx.scale(dpr, dpr);
-
-    return ctx;
-}
-
-function drawRect(ctx, x,y,w,h,marginX,marginY)
-{
-	ctx.strokeRect(x+marginX, y+marginY, w-marginX*2, h-marginY*2);
-}
-
-function fillRect(ctx, x,y,w,h,marginX,marginY,fillColor, txt, txtColor)
-{
-	ctx.fillStyle = fillColor; 
-	ctx.fillRect(x+marginX, y+marginY, w-marginX*2, h-marginY*2);
-	if(txt){
-		ctx.fillStyle = txtColor; 
-		ctx.fillText(txt, x+w/2, y+h/2, w);
-	}
-}
-
-function drawRe(ctx, color, k, l, txt, txtColor)
-{
-	const cW = ctx.canvas.clientWidth;
-	const cH = ctx.canvas.clientHeight;
-
-	
-	const reH = cH / config.nSubCarrier;
-	const reW = cW / config.nSymbol;
-	fillRect(ctx, l*reW, cH-(k+1)*reH, reW, reH, 1, 1, color, txt, txtColor);
-
-}
 
 function draw()
 {
 	config = JSON.parse(document.getElementById("config").value);
-
 	CSIRSConfig = JSON.parse(document.getElementById("CSIRSConfig").value);
 
-	const canvas = document.getElementById("frame");
-	
-	if (canvas.getContext) {
-		const ctx = setupHDCanvas(canvas, 1000, 1000);
-		
-		
+	clear3D();
+	const nSubCarrier = config.NSCRB * config.NPRB;
 
-		
-		for(let k=0;k<config.nSubCarrier;++k){
-			for(let l=0;l<config.nSymbol;++l){
+	const grid = new Grid(nSubCarrier, config.nSymbol);
 
-				drawRe(ctx, "darkblue", k, l, "("+k+","+l+")","white"); 
-			}
+	for(let k=0;k<nSubCarrier;++k){
+		for(let l=0;l<config.nSymbol;++l){
+			drawRe3D("darkblue", k, l, grid.add(k,l), "("+k+","+l+")","white"); 
 		}
-		
-		const csirs = getCSIRS();
-		console.log(csirs);
-		for(const port in csirs){
-			for(const e of csirs[port]){
-				drawRe(ctx, "#FFFF0055", e[0], e[1], ""+port,"black");
-			}
+	}
+	
+	const csirs = getCSIRS();
+	console.log(csirs);
+	for(const port in csirs){
+		for(const e of csirs[port]){
+			const k = e[0];
+			const l = e[1];
+			drawRe3D("yellow", e[0], e[1], grid.add(k,l), ""+port,"black");
 		}
 	}
 }

@@ -1,13 +1,20 @@
 <html>
-<head><title>5G NR Frame Viewer</title></head>
+<head><title>5G NR Frame Viewer</title>
+    <script type="importmap">
+        {
+          "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@latest/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@latest/examples/jsm/"
+          }
+        }
+    </script>
+</head>
 <body>
-<script src="frame.js">
-</script>
+<script src="frame.js"> </script>
+<script src="3d.js" type="module" > </script>
 <textarea id="config" style="width:320px; height:160px;"></textarea>
 <textarea id="CSIRSConfig" style="width:320px; height:160px;"></textarea>
 <button onclick="draw()">Draw</button></br>
-<canvas id="frame" style="width:1000px; height:1000px;" ></canvas>
 </body>
-
 </canvas>
 </html>
