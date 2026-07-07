@@ -5,7 +5,6 @@ var config={
 	"nSymbol":14
 };
 
-// 宣言
 class Grid {
 	constructor(nsc, nsymb) {
 	  this.nsc = nsc;
@@ -17,15 +16,36 @@ class Grid {
 
 	add(k, l){
 		this.grid[k][l] += 1;
-		return this.grid[k][l];
+		return this.grid[k][l]-1; // return value before increment
 	}
-  }
+}
+
+class Counter {
+	constructor(offset) {
+		this.m = {};
+		this.cnt = offset;
+	}
+  
+	  touch(k){
+		  if(k in this.m){}
+		  else {
+			this.m[k] = this.cnt;
+			this.cnt++;
+		  }
+		  return this.m[k];
+	  }
+}
 
 // https://jp.mathworks.com/help/5g/ref/nrcsirsconfig.html
 var CSIRSConfig={
 	"density":1, // CSI-RS-ResourceMapping IE or the CSI-RSCellMobility IE. 
 	"BetaCSIRS":1.0,
-
+	/* Legend 
+	"nrofPorts":32, // N
+	"symbolLocations":[0,2], // firstOFDMSymbolInTimeDomain, firstOFDMSymbolInTimeDomain2 : Time domain 
+	"subcarrierLocations":"101101", // frequencyDomainAllocation, size 2,3,6,12 bit string, for many cases 6 [b5,b4,...,b0]. "101001" => f(0)=0, f(1)=3, f(2)=5. f(i) is bit number(index) of i-th bit set to 1
+	"cdm-Type":"fd-CDM2",
+	*/
 
 	/*
 	"nrofPorts":32, // N
@@ -253,7 +273,7 @@ function getCSIRS()
 						//a_klpmu = CSIRSConfig.BetaCSIRS * wf[kd] * wt[ld] * r(md);
 						a_klpmu = wf[kd] * wt[ld];
 						if(!(p in csirs)) csirs[p]=[];
-						csirs[p].push([k,l,a_klpmu]);
+						csirs[p].push([k,l,[wf[kd],wt[ld]]]);
 					}
 				}
 			}
@@ -272,6 +292,7 @@ function draw()
 	const nSubCarrier = config.NSCRB * config.NPRB;
 
 	const grid = new Grid(nSubCarrier, config.nSymbol);
+	const cntr = new Counter(1);
 
 	for(let k=0;k<nSubCarrier;++k){
 		for(let l=0;l<config.nSymbol;++l){
@@ -285,7 +306,7 @@ function draw()
 		for(const e of csirs[port]){
 			const k = e[0];
 			const l = e[1];
-			drawRe3D("yellow", e[0], e[1], grid.add(k,l), ""+port,"black");
+			drawRe3D("yellow", e[0], e[1], (true ? cntr.touch(port) : grid.add(k,l)), ""+port+","+e[2][0]+","+e[2][1],"black");
 		}
 	}
 }

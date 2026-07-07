@@ -5,6 +5,8 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 var scene;
 var objects = [];
+let viewW = 1000;
+let viewH = 800;
 
 function prepare()
 {
@@ -13,30 +15,18 @@ function prepare()
 
     const camera = new THREE.PerspectiveCamera(
     75,
-    window.innerWidth / window.innerHeight,
+    viewW / viewH,
     0.1,
     1000
     );
     camera.position.z = 20;
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setSize(viewW, viewH);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     document.body.appendChild(renderer.domElement);
 
-    // カメラコントローラーを作成
     const controls = new OrbitControls(camera, renderer.domElement);
-
-    /*
-    const geometry = new THREE.BoxGeometry(1, 1, 1);
-    const material = new THREE.MeshStandardMaterial({
-    color: 0x4ade80,
-    metalness: 0.2,
-    roughness: 0.35
-    });
-    const cube = new THREE.Mesh(geometry, material);
-    scene.add(cube);
-    */
 
     const directionalLight = new THREE.DirectionalLight(0xffffff, 3);
     directionalLight.position.set(2, 2, 3);
@@ -45,17 +35,34 @@ function prepare()
     const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
     scene.add(ambientLight);
 
+    var axisHelper = new THREE.AxesHelper( 5 );
+    scene.add( axisHelper );
+
+    const raycaster = new THREE.Raycaster();
+    const mouse     = new THREE.Vector2();
+    renderer.domElement.addEventListener('mousemove', (e) => {
+        mouse.x =  (e.offsetX / renderer.domElement.clientWidth)  * 2 - 1;
+        mouse.y = -(e.offsetY / renderer.domElement.clientHeight) * 2 + 1;
+    });
+
     const clock = new THREE.Clock();
 
     function animate() {
         requestAnimationFrame(animate);
 
-        /*
-        const t = clock.getElapsedTime();
-        cube.rotation.x = t * 0.7;
-        cube.rotation.y = t * 1.0;
-        cube.position.y = Math.sin(t * 1.5) * 0.15;
-        */
+        raycaster.setFromCamera(mouse, camera);
+        const intersects = raycaster.intersectObjects(objects);
+        objects.forEach((obj) => {
+            //obj.material.color.setHex(colors.normal);
+            obj.scale.setScalar(1);
+        });
+
+        if (intersects.length > 0) {
+            const hit = intersects[0].object;
+            //hit.material.color.setHex(colors.hover);
+            hit.scale.setScalar(1.1); 
+            document.getElementById("infoarea").value = hit.info;
+        }
         renderer.render(scene, camera);
     }
 
@@ -67,10 +74,11 @@ window.addEventListener("DOMContentLoaded", () => {
 });
 
 window.addEventListener("resize", () => {
-  camera.aspect = window.innerWidth / window.innerHeight;
+
+  camera.aspect = viewW / viewH;
   camera.updateProjectionMatrix();
 
-  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setSize(viewW, viewH);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 });
 
@@ -93,6 +101,7 @@ window.drawRe3D = (color, k, l, zindex, txt, txtColor)=>{
     });
     const cube = new THREE.Mesh(geometry, material);
     cube.position.set(rew*l, reh*k, rez*zindex);
+    cube.info = txt;
     scene.add(cube);
     objects.push(cube);
 };
